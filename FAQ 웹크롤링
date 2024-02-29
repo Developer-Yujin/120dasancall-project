@@ -1,0 +1,118 @@
+from selenium import webdriver
+driver = webdriver.Chrome('C:\\Users\\AAA\\Downloads\\chromedriver.exe')
+
+import requests
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
+session = requests.session()
+url_main = 'http://app.120dasan.or.kr/main/main.do' #내부망
+res = session.get(url_main)
+res.raise_for_status()
+soup = BeautifulSoup(res.text, "html.parser")
+
+driver.get('http://app.120dasan.or.kr/login.do')
+
+driver.title
+
+from selenium.webdriver.common.by import By
+
+# 로그인
+import time
+driver.find_element(By.ID, 'user_id').send_keys('아이디')
+driver.find_element(By.ID,'pass_word').send_keys('비밀번호')
+driver.find_element(By.CLASS_NAME, 'btn-login').click()
+time.sleep(3)
+
+driver.find_element(By.ID, 'tabBtn_0_7').click() #DB탭
+
+#조회탭으로 들어가기
+driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#ifmVer_0_7')) 
+
+from selenium.webdriver.support.select import Select
+
+import pandas as pd
+df = pd.DataFrame(columns= ['대분류', '중분류', '소분류', '업무명', '답변', '업무개요'])
+col = df.columns
+
+from selenium.webdriver.support.select import Select
+select1 = Select(driver.find_element(By.CSS_SELECTOR, "body > form:nth-child(2) > table > tbody > tr:nth-child(1) > td:nth-child(6) > select"))
+select2=Select(driver.find_element(By.ID, "lclas"))
+from selenium.common.exceptions import NoSuchElementException
+
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
+import pyautogui
+
+import pyautogui
+pyautogui.position()
+
+def logic2():
+    global df
+    global i
+    
+    for j in range(2, 22):
+        try:
+            if j==12:
+                pyautogui.moveTo(1865, 729, 1)
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                time.sleep(3)
+
+
+             
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignLeft.GMText.GMCell.IBSheetFont0.HideCol0C5').click()
+            
+            row = [
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignCenter.GMText.GMCell.IBSheetFont0.HideCol0C20').get_attribute("innerHTML"),
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignCenter.GMText.GMCell.IBSheetFont0.HideCol0C21').get_attribute("innerHTML"),
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignCenter.GMText.GMCell.IBSheetFont0.HideCol0C22').get_attribute("innerHTML"),
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignLeft.GMText.GMCell.IBSheetFont0.HideCol0C5').text
+            ]
+            
+            # 프레임 전환
+            driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#NamoSE_Ifr__answer'))
+            driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#NamoSE_editorframe_answer'))  
+            
+            #답변
+            row.append(driver.find_element(By.CSS_SELECTOR, 'body').text)
+            
+            #업무개요
+            try:
+                if driver.find_element(By.CSS_SELECTOR, 'body > table > tbody > tr:nth-child(1) > td:nth-child(1)').text =='업무개요':
+                    row.append(driver.find_element(By.CSS_SELECTOR, 'body > table > tbody > tr:nth-child(1) > td:nth-child(2)').text)
+                else:
+                    row.append('없음')
+            except NoSuchElementException:
+                row.append('없음')
+            
+            
+            df_row = pd.Series(row, index=col)
+            df = df.append(df_row, ignore_index=True)
+            
+            driver.switch_to.default_content()
+            
+            driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#ifmVer_0_7'))
+            
+            print('-')
+                
+            
+
+        except NoSuchElementException:
+            break
+    
+
+
+
+
+
+
+
+
