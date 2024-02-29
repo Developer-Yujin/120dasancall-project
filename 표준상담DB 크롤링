@@ -1,0 +1,146 @@
+from selenium import webdriver
+driver = webdriver.Chrome('C:\\Users\\AAA\\Downloads\\chromedriver.exe')
+
+import requests
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
+session = requests.session()
+url_main = 'http://app.120dasan.or.kr/main/main.do' # 내부망
+res = session.get(url_main)
+res.raise_for_status()
+soup = BeautifulSoup(res.text, "html.parser")
+
+driver.get('http://app.120dasan.or.kr/login.do')
+
+driver.title
+
+from selenium.webdriver.common.by import By
+
+import time
+driver.find_element(By.ID, 'user_id').send_keys('아이디')
+driver.find_element(By.ID,'pass_word').send_keys('비밀번호')
+driver.find_element(By.CLASS_NAME, 'btn-login').click()
+time.sleep(3)
+
+driver.find_element(By.ID, 'tabBtn_0_7').click() #DB탭
+
+driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#ifmVer_0_7'))
+
+from selenium.webdriver.support.select import Select
+
+import pandas as pd
+df = pd.DataFrame(columns= ['대분류', '중분류', '소분류', '업무명', '업무개요'])
+col = df.columns
+
+time.sleep(3)
+
+from selenium.webdriver.support.select import Select
+select1 = Select(driver.find_element(By.CSS_SELECTOR, "body > form:nth-child(2) > table > tbody > tr:nth-child(1) > td:nth-child(6) > select"))
+select2=Select(driver.find_element(By.ID, "lclas"))
+from selenium.common.exceptions import NoSuchElementException
+
+from selenium.webdriver.common.keys import Keys
+
+# ActionChains 를 사용하기 위해서.
+from selenium.webdriver import ActionChains
+
+import pyautogui
+
+pyautogui.position()
+
+def logic():
+    global df
+    global i
+    
+    for j in range(2, 22):
+        try:
+            if j==12:
+                pyautogui.moveTo(1865, 729, 1)
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                time.sleep(3)
+
+
+             
+            driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child('+str(j)+') > td.GMClassReadOnly.GMWrap0.GMAlignLeft.GMText.GMCell.IBSheetFont0.HideCol0C5').click()
+            driver.switch_to.window(driver.window_handles[2])
+            time.sleep(1)
+            row = [driver.find_element(By.XPATH, '//*[@id="pyo1111"]/tbody/tr[2]/td[1]').text,
+                   driver.find_element(By.XPATH, '//*[@id="pyo1111"]/tbody/tr[2]/td[2]').text,
+                   driver.find_element(By.XPATH, '//*[@id="pyo1111"]/tbody/tr[2]/td[3]').text,
+                   driver.find_element(By.XPATH, '//*[@id="pyo1111"]/tbody/tr[3]/td').text]
+
+            try:
+                row.append(driver.find_element(By.XPATH, '//*[@id="pyo00"]/tbody/tr[1]/td').text)
+            except NoSuchElementException:
+                row.append('없음')
+            df_row = pd.Series(row, index=col)
+            df = df.append(df_row, ignore_index=True)
+            main = driver.window_handles
+            for k in main:
+                if k != main[0]:
+                    driver.switch_to.window(k)
+                    driver.close()
+
+            driver.switch_to.window(driver.window_handles[0])
+            driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, '#ifmVer_0_7'))
+
+            print(driver.window_handles)
+                
+            
+
+        except NoSuchElementException:
+            break
+
+for i in range(1, 18):
+    flag =True
+    #if i<=3 or i>=28:
+    if i==8:
+        select1.select_by_index(2)
+        select2.select_by_index(i)
+        driver.find_element(By.ID, 'btnQuery').click()
+        time.sleep(5)
+        
+        #for j in range(2, 21):
+        
+        while flag==True:
+            logic()
+            try:
+                driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(5) > td > div > table > tbody > tr > td.GMWrap0.GMCellSpaceButton.GMToolPagerNext1.GMEmpty').click()
+                pyautogui.moveTo(1865, 438, 1)
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                pyautogui.click()
+                time.sleep(3)
+                dup = driver.find_element(By.CSS_SELECTOR, '#UCADM100S-table > tbody > tr:nth-child(2) > td > div > div.GMPageOne > table > tbody > tr:nth-child(2) > td.GMClassReadOnly.GMWrap0.GMAlignLeft.GMText.GMCell.IBSheetFont0.HideCol0C5').text
+                if (df['업무명']==dup).any():#동일한 내용이면
+                    flag=False
+                elif dup not in df['업무명']: 
+                    pass   
+            except NoSuchElementException:
+                flag=False
+
+                
+
+    
+            
+
+
+
+
+
+
+
