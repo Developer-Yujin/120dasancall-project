@@ -1,2 +1,142 @@
 import pandas as pd
 df = pd.read_excel('C:\\Users\\AAA\\Desktop\\분석\\크롤링자료.xlsx')
+
+df.head()
+
+df['업무개요']
+
+import re
+n = 0
+for i in range(len(df)):
+    print(i, re.findall(r'\s\S+시 ', str(df['업무개요'][i])))
+    
+ # 한 행에 2개 이상의 정규식 조건을 충족하는 글자가 있을 수  있으니
+# search가 아닌 findall을 사용
+
+n = 0
+for i in range(len(df)):
+    if re.findall(r' \S+시 ', str(df['업무개요'][i]))!=[]:
+        n = n+1
+        print(i, df['업무개요'][i])
+        print(n)
+
+n = 0
+for i in range(len(df)):
+    if re.findall(r' \S+시 ', str(df['업무개요'][i]))!=[]:
+        n = n+1
+        print(i, df['업무개요'][i])
+        print(n)
+
+df.isna().sum()
+
+df['업무개요'].fillna('없음', inplace=True)
+
+idx = df[df['업무개요']=='없음'].index
+df = df.drop(idx)
+
+df[df['업무개요']=='없음'].sum()
+
+#1차 불용어 제거 및 명사토큰화
+
+import re
+for i in range(len(df)):
+    
+    df['자료'][i] = re.sub('[^A-Z|a-z|0-9|가-힣|\s]', ' ', str(df['자료'][i]))
+
+df['자료'] = df['자료'].replace('\n','').replace('\t','').replace('\r','')
+
+n = 0
+for i in range(len(df)):
+    if re.findall(r'\s+', str(df['자료'][i]))!=[]:
+        df['자료'][i] = re.sub('\s+',' ', str(df['자료'][i]))
+        n = n+1
+        print(i, df['자료'][i])
+print(n)
+
+n = 0
+for i in range(len(df)):
+    if re.findall(r'^\s+', str(df['자료'][i]))!=[]:
+        df['자료'][i] = re.sub('^\s+','', str(df['자료'][i]))
+        n = n+1
+        print(i, df['자료'][i])
+print(n)
+
+stopwords = ['및', '등', '수', '서울시', '서울특별시', '서울', '사업종료', '업무종료', '사업개요', '업무개요', '업무', '개요']
+
+from konlpy.tag import Kkma
+kkma = Kkma()
+
+df['자료']
+
+for i in range(len(df)):
+    df['kkma'][i] = kkma.nouns(str(df['자료'][i]))
+    print(i, df['kkma'])
+
+for i in range(len(df)):
+    for j in stopwords:
+        if j in df['kkma명사'][i]:
+            df['kkma명사'][i].remove(j)
+
+#역토큰화 및 2차 불용어 제거 및 재토큰화
+
+import re
+
+stopwords = ['내용', '중요', '중요사항', '사항', '지원', '실시', '안내', '연락처', '관련', '추진', '촉진','조성', '시간', '현황', 
+             '절차', '제공', '범위', '방법', '문의', '사업', '진행', '기간', '종료', '사업기간', '사업종료', '소개']
+
+df['역토큰화'] = '없음'
+
+# 역토큰화 (토큰화 작업을 되돌림) (한 번 더 전처리하기 위해)
+detokenized_doc = []
+for i in range(len(df)):
+    t = ' '.join(df['kkma명사'][i])
+    detokenized_doc.append(t)
+
+# 다시 text['headline_text']에 재저장
+df['역토큰화'] = detokenized_doc
+
+for i in range(len(df)):
+    if re.findall(r'\s[가-힣]\s', df['역토큰화'][i]):
+        df['역토큰화'][i] = re.sub(r'\s[가-힣]\s', '', df['역토큰화'][i])
+        print(df['역토큰화'][i])
+
+for i in range(len(df)):
+    if re.findall(r'^[가-힣]\s', df['역토큰화'][i]):
+        df['역토큰화'][i] = re.sub(r'[가-힣]\s', '', df['역토큰화'][i])
+    if re.findall(r'\s[가-힣]$', df['역토큰화'][i]):
+        df['역토큰화'][i] = re.sub(r'[가-힣]', '', df['역토큰화'][i])
+        print(df['역토큰화'][i])
+
+for i in range(len(df)):
+    if re.findall(r'서울', df['역토큰화'][i]):
+        df['역토큰화'][i] = re.sub(r'서울', '', df['역토큰화'][i])
+        print(df2['역토큰화'][i])
+
+for j in stopwords:
+    df['역토큰화'] = df['역토큰화'].str.replace(' '+j+' ', ' ')
+    df['역토큰화'] = df['역토큰화'].str.replace(j+' ', ' ')
+    df['역토큰화'] = df['역토큰화'].str.replace(' '+j, ' ')
+
+
+# 머신러닝을 하기 위해 다시 토큰화
+for i in range(len(df)):
+    print(df['역토큰화'][i])
+    df['kkma명사'][i] = df['역토큰화'][i].split()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
