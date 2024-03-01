@@ -1,0 +1,97 @@
+# 토픽모델링으로 상담 분류하기
+
+import pandas as pd
+df = pd.read_excel('C:\\Users\\AAA\\Desktop\\분석\\전처리한것.xlsx')
+
+# 기관 보안상 다른 단어로 대체하였습니다.
+
+dog = df[df['대분류'] == '개']
+mouse = df[df['대분류'] == '쥐']   
+cat = df[df['대분류'] == '고양이']
+horse = df[df['대분류'] == '말']
+cow = df[df['대분류'] == '소']
+
+len(dog)
+
+len(mouse)
+
+len(cat)
+
+len(horse)
+
+len(cow)
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+#상위 1,000개의 단어를 보존 
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(welfare['역토큰화'])
+
+# TF-IDF 행렬의 크기 확인
+print('TF-IDF 행렬의 크기 :',X.shape)
+
+import numpy as np
+np.set_printoptions(precision=3)
+from tmtoolkit.topicmod.evaluate import metric_coherence_gensim
+import matplotlib.pyplot as plt
+%matplotlib inline
+from sklearn.decomposition import LatentDirichletAllocation
+
+def calc_pv_coherence(X,vocab, start=5, end=30, max_iter=10,topic_wp=0.1, doc_tp=1.0):
+    num = []
+    per_value = []
+    cor_value = []
+    for i in range(start,end+1):
+        lda = LatentDirichletAllocation(n_components=i,max_iter=max_iter,
+                                       topic_word_prior=topic_wp,
+                                       doc_topic_prior=doc_tp,
+                                       learning_method='batch', n_jobs=-1,
+                                       random_state=0)
+        lda.fit(X)
+        num.append(i)
+        pv = lda.perplexity(X)
+        per_value.append(pv)
+        coherence_score = metric_coherence_gensim(measure='u_mass',
+                                                  top_n=10,
+                                                  topic_word_distrib=lda.components_,
+                                                 dtm=X,
+                                                 vocab=vocab,
+                                                 texts=None)
+        cor_value.append(np.mean(coherence_score))
+        
+        print(f'토픽 수: {i}, 혼란도: {pv:0.4f}, 응집도:{np.mean(coherence_score):0.4f}')
+    
+    plt.plot(num,per_value,'g-')
+    plt.xlabel("토픽 수:")
+    plt.ylabel("혼란도: ")
+    plt.show()
+    
+    plt.plot(num,cor_value,'r--')
+    plt.xlabel("토픽 수:")
+    plt.ylabel("응집도: ")
+    plt.show()
+    return per_value,cor_value
+
+per_values, cor_values = calc_pv_coherence(X,vectorizer.get_feature_names_out(),start=5,end=30)
+
+lda = LatentDirichletAllocation(n_components=30,
+                               n_jobs= -1,
+                               random_state=0,
+                               max_iter=10,
+                                topic_word_prior=0.1,
+                               doc_topic_prior=1.0,
+                               learning_method='batch')
+
+
+%time topics = lda.fit_transform(X)
+
+for topic_idx, topic in enumerate(lda.components_):
+    print("토픽 #%d: " % topic_idx, end='')
+    print(", ".join([vectorizer.get_feature_names_out()[i] for i in topic.argsort()[:-11:-1]]))
+
+welfare['토픽'] = '없음'
+
+welfare.reset_index(drop=True, inplace=True)
+
+for i in range(len(welfare)):
+    welfare['토픽'][i] = list(topics[i]).index(max(topics[i]))
